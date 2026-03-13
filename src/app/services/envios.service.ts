@@ -12,7 +12,7 @@ import {
 })
 export class EnviosService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/api/envios';
+  private apiUrl = '/api/envios';
 
   crearTerrestre(payload: CrearEnvioTerrestreRequest): Observable<EnvioResponse> {
     return this.http.post<EnvioResponse>(`${this.apiUrl}/terrestre`, payload);

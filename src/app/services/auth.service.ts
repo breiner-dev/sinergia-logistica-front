@@ -9,7 +9,7 @@ import { LoginRequest, LoginResponse } from '../models/auth.models';
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/auth/login';
+  private readonly apiUrl = '/api/auth/login';
   private readonly tokenKey = 'auth_token';
 
   private tokenSignal = signal<string | null>(localStorage.getItem(this.tokenKey));
