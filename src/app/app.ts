@@ -3,11 +3,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from './services/auth.service';
 import { EnviosService } from './services/envios.service';
+import { ClientesService } from './services/clientes.service';
 import {
   CrearEnvioMaritimoRequest,
   CrearEnvioTerrestreRequest,
   EnvioResponse,
 } from './models/envio.models';
+import { ClienteResponse } from './models/cliente.models';
 
 type TipoEnvio = 'terrestre' | 'maritimo';
 
@@ -22,21 +24,18 @@ export class App implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private enviosService = inject(EnviosService);
-  
+  private clientesService = inject(ClientesService);
+
   readonly autenticado = this.authService.autenticado;
-  
+
   tabActiva = signal<TipoEnvio>('terrestre');
   envios = signal<EnvioResponse[]>([]);
+  clientes = signal<ClienteResponse[]>([]);
   cargando = signal(false);
+  cargandoClientes = signal(false);
   loginError = signal('');
   loginCargando = signal(false);
   editandoId = signal<string | null>(null);
-  
-  readonly clientes = [
-    { id: '45f1872c-aa88-4b57-87d0-b6625b5ba5b1', nombre: 'Cliente 1' },
-    { id: '2f1b2a9f-0f02-45d8-8fe8-cf63f108a7a2', nombre: 'Cliente 2' },
-    { id: '11111111-2222-3333-4444-555555555555', nombre: 'Cliente 3' },
-  ];
 
   loginForm = this.fb.group({
     username: ['', Validators.required],
@@ -91,7 +90,7 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     if (this.autenticado()) {
-      this.listarEnvios();
+      this.cargarDatosIniciales();
     }
   }
 
@@ -112,7 +111,7 @@ export class App implements OnInit {
     this.authService.login(payload).subscribe({
       next: () => {
         this.loginCargando.set(false);
-        this.listarEnvios();
+        this.cargarDatosIniciales();
       },
       error: (error) => {
         console.error('Error login', error);
@@ -125,10 +124,31 @@ export class App implements OnInit {
   cerrarSesion(): void {
     this.authService.logout();
     this.envios.set([]);
+    this.clientes.set([]);
+    this.editandoId.set(null);
+  }
+
+  cargarDatosIniciales(): void {
+    this.listarClientes();
+    this.listarEnvios();
   }
 
   cambiarTab(tipo: TipoEnvio): void {
     this.tabActiva.set(tipo);
+  }
+
+  listarClientes(): void {
+    this.cargandoClientes.set(true);
+    this.clientesService.listar().subscribe({
+      next: (data) => {
+        this.clientes.set(data);
+        this.cargandoClientes.set(false);
+      },
+      error: (error) => {
+        console.error('Error al listar clientes', error);
+        this.cargandoClientes.set(false);
+      },
+    });
   }
 
   listarEnvios(): void {
@@ -235,6 +255,69 @@ export class App implements OnInit {
     });
   }
 
+  editarEnvio(envio: EnvioResponse): void {
+    this.editandoId.set(envio.id ?? null);
+
+    if (envio.tipoLogistica === 'TERRESTRE') {
+      this.tabActiva.set('terrestre');
+      this.terrestreForm.patchValue({
+        clienteId: envio.clienteId,
+        tipoProducto: envio.tipoProducto,
+        cantidad: envio.cantidad,
+        fechaEntrega: envio.fechaEntrega,
+        precioEnvio: envio.precioEnvio,
+        nombreBodega: envio.nombreBodega ?? '',
+        placaVehiculo: envio.placaVehiculo ?? '',
+        numeroGuia: envio.numeroGuia,
+      });
+      return;
+    }
+
+    this.tabActiva.set('maritimo');
+    this.maritimoForm.patchValue({
+      clienteId: envio.clienteId,
+      tipoProducto: envio.tipoProducto,
+      cantidad: envio.cantidad,
+      fechaEntrega: envio.fechaEntrega,
+      precioEnvio: envio.precioEnvio,
+      nombrePuerto: envio.nombrePuerto ?? '',
+      numeroFlota: envio.numeroFlota ?? '',
+      numeroGuia: envio.numeroGuia,
+    });
+  }
+
+  eliminarEnvio(envio: EnvioResponse): void {
+    if (!envio.id) {
+      alert('No se puede eliminar porque el envío no tiene id.');
+      return;
+    }
+
+    const confirmado = confirm(`¿Deseas eliminar el envío ${envio.numeroGuia}?`);
+    if (!confirmado) {
+      return;
+    }
+
+    this.enviosService.eliminar(envio.id).subscribe({
+      next: () => {
+        this.envios.update((actual) => actual.filter((item) => item.id !== envio.id));
+
+        if (this.editandoId() === envio.id) {
+          this.cancelarEdicion();
+        }
+      },
+      error: (error) => {
+        console.error('Error al eliminar envío', error);
+        alert('No se pudo eliminar el envío');
+      },
+    });
+  }
+
+  cancelarEdicion(): void {
+    this.editandoId.set(null);
+    this.resetTerrestreForm();
+    this.resetMaritimoForm();
+  }
+
   campoInvalido(form: TipoEnvio, campo: string): boolean {
     if (form === 'terrestre') {
       const control = this.terrestreForm.get(campo);
@@ -253,92 +336,34 @@ export class App implements OnInit {
     }).format(valor);
   }
 
-  editarEnvio(envio: EnvioResponse): void {
-  this.editandoId.set(envio.id ?? null);
+  obtenerNombreCliente(clienteId: string): string {
+    const cliente = this.clientes().find((c) => c.id === clienteId);
+    return cliente?.nombre ?? clienteId;
+  }
 
-  if (envio.tipoLogistica === 'TERRESTRE') {
-    this.tabActiva.set('terrestre');
-    this.terrestreForm.patchValue({
-      clienteId: envio.clienteId,
-      tipoProducto: envio.tipoProducto,
-      cantidad: envio.cantidad,
-      fechaEntrega: envio.fechaEntrega,
-      precioEnvio: envio.precioEnvio,
-      nombreBodega: envio.nombreBodega ?? '',
-      placaVehiculo: envio.placaVehiculo ?? '',
-      numeroGuia: envio.numeroGuia,
+  private resetTerrestreForm(): void {
+    this.terrestreForm.reset({
+      clienteId: '',
+      tipoProducto: '',
+      cantidad: 1,
+      fechaEntrega: '',
+      precioEnvio: 100,
+      nombreBodega: '',
+      placaVehiculo: '',
+      numeroGuia: '',
     });
-    return;
   }
 
-  this.tabActiva.set('maritimo');
-  this.maritimoForm.patchValue({
-    clienteId: envio.clienteId,
-    tipoProducto: envio.tipoProducto,
-    cantidad: envio.cantidad,
-    fechaEntrega: envio.fechaEntrega,
-    precioEnvio: envio.precioEnvio,
-    nombrePuerto: envio.nombrePuerto ?? '',
-    numeroFlota: envio.numeroFlota ?? '',
-    numeroGuia: envio.numeroGuia,
-  });
-}
-
-eliminarEnvio(envio: EnvioResponse): void {
-  if (!envio.id) {
-    alert('No se puede eliminar porque el envío no tiene id.');
-    return;
+  private resetMaritimoForm(): void {
+    this.maritimoForm.reset({
+      clienteId: '',
+      tipoProducto: '',
+      cantidad: 1,
+      fechaEntrega: '',
+      precioEnvio: 200,
+      nombrePuerto: '',
+      numeroFlota: '',
+      numeroGuia: '',
+    });
   }
-
-  const confirmado = confirm(`¿Deseas eliminar el envío ${envio.numeroGuia}?`);
-  if (!confirmado) {
-    return;
-  }
-
-  this.enviosService.eliminar(envio.id).subscribe({
-    next: () => {
-      this.envios.update((actual) => actual.filter((item) => item.id !== envio.id));
-
-      if (this.editandoId() === envio.id) {
-        this.cancelarEdicion();
-      }
-    },
-    error: (error) => {
-      console.error('Error al eliminar envío', error);
-      alert('No se pudo eliminar el envío');
-    },
-  });
-}
-
-cancelarEdicion(): void {
-  this.editandoId.set(null);
-  this.resetTerrestreForm();
-  this.resetMaritimoForm();
-}
-
-private resetTerrestreForm(): void {
-  this.terrestreForm.reset({
-    clienteId: '',
-    tipoProducto: '',
-    cantidad: 1,
-    fechaEntrega: '',
-    precioEnvio: 100,
-    nombreBodega: '',
-    placaVehiculo: '',
-    numeroGuia: '',
-  });
-}
-
-private resetMaritimoForm(): void {
-  this.maritimoForm.reset({
-    clienteId: '',
-    tipoProducto: '',
-    cantidad: 1,
-    fechaEntrega: '',
-    precioEnvio: 200,
-    nombrePuerto: '',
-    numeroFlota: '',
-    numeroGuia: '',
-  });
-}
 }
