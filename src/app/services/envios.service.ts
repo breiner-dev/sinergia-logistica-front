@@ -15,11 +15,11 @@ export class EnviosService {
   private apiUrl = '/api/envios';
 
   crearTerrestre(payload: CrearEnvioTerrestreRequest): Observable<EnvioResponse> {
-    return this.http.post<EnvioResponse>(`${this.apiUrl}/terrestre`, payload);
+    return this.http.post<EnvioResponse>(`${this.apiUrl}/crear`, payload);
   }
 
   crearMaritimo(payload: CrearEnvioMaritimoRequest): Observable<EnvioResponse> {
-    return this.http.post<EnvioResponse>(`${this.apiUrl}/maritimo`, payload);
+    return this.http.post<EnvioResponse>(`${this.apiUrl}/crear`, payload);
   }
 
   listar(): Observable<EnvioResponse[]> {
