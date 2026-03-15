@@ -22,15 +22,16 @@ export class App implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private enviosService = inject(EnviosService);
-
+  
   readonly autenticado = this.authService.autenticado;
-
+  
   tabActiva = signal<TipoEnvio>('terrestre');
   envios = signal<EnvioResponse[]>([]);
   cargando = signal(false);
   loginError = signal('');
   loginCargando = signal(false);
-
+  editandoId = signal<string | null>(null);
+  
   readonly clientes = [
     { id: '45f1872c-aa88-4b57-87d0-b6625b5ba5b1', nombre: 'Cliente 1' },
     { id: '2f1b2a9f-0f02-45d8-8fe8-cf63f108a7a2', nombre: 'Cliente 2' },
@@ -161,19 +162,26 @@ export class App implements OnInit {
       numeroGuia: this.terrestreForm.get('numeroGuia')?.value ?? '',
     };
 
+    if (this.editandoId()) {
+      this.enviosService.actualizar(this.editandoId()!, payload).subscribe({
+        next: (response) => {
+          this.envios.update((actual) =>
+            actual.map((item) => (item.id === response.id ? response : item))
+          );
+          this.cancelarEdicion();
+        },
+        error: (error) => {
+          console.error('Error al actualizar envío terrestre', error);
+          alert('No se pudo actualizar el envío terrestre');
+        },
+      });
+      return;
+    }
+
     this.enviosService.crearTerrestre(payload).subscribe({
       next: (response) => {
         this.envios.update((actual) => [response, ...actual]);
-        this.terrestreForm.reset({
-          clienteId: '',
-          tipoProducto: '',
-          cantidad: 1,
-          fechaEntrega: '',
-          precioEnvio: 100,
-          nombreBodega: '',
-          placaVehiculo: '',
-          numeroGuia: '',
-        });
+        this.resetTerrestreForm();
       },
       error: (error) => {
         console.error('Error al registrar envío terrestre', error);
@@ -199,19 +207,26 @@ export class App implements OnInit {
       numeroGuia: this.maritimoForm.get('numeroGuia')?.value ?? '',
     };
 
+    if (this.editandoId()) {
+      this.enviosService.actualizar(this.editandoId()!, payload).subscribe({
+        next: (response) => {
+          this.envios.update((actual) =>
+            actual.map((item) => (item.id === response.id ? response : item))
+          );
+          this.cancelarEdicion();
+        },
+        error: (error) => {
+          console.error('Error al actualizar envío marítimo', error);
+          alert('No se pudo actualizar el envío marítimo');
+        },
+      });
+      return;
+    }
+
     this.enviosService.crearMaritimo(payload).subscribe({
       next: (response) => {
         this.envios.update((actual) => [response, ...actual]);
-        this.maritimoForm.reset({
-          clienteId: '',
-          tipoProducto: '',
-          cantidad: 1,
-          fechaEntrega: '',
-          precioEnvio: 200,
-          nombrePuerto: '',
-          numeroFlota: '',
-          numeroGuia: '',
-        });
+        this.resetMaritimoForm();
       },
       error: (error) => {
         console.error('Error al registrar envío marítimo', error);
@@ -237,4 +252,93 @@ export class App implements OnInit {
       minimumFractionDigits: 2,
     }).format(valor);
   }
+
+  editarEnvio(envio: EnvioResponse): void {
+  this.editandoId.set(envio.id ?? null);
+
+  if (envio.tipoLogistica === 'TERRESTRE') {
+    this.tabActiva.set('terrestre');
+    this.terrestreForm.patchValue({
+      clienteId: envio.clienteId,
+      tipoProducto: envio.tipoProducto,
+      cantidad: envio.cantidad,
+      fechaEntrega: envio.fechaEntrega,
+      precioEnvio: envio.precioEnvio,
+      nombreBodega: envio.nombreBodega ?? '',
+      placaVehiculo: envio.placaVehiculo ?? '',
+      numeroGuia: envio.numeroGuia,
+    });
+    return;
+  }
+
+  this.tabActiva.set('maritimo');
+  this.maritimoForm.patchValue({
+    clienteId: envio.clienteId,
+    tipoProducto: envio.tipoProducto,
+    cantidad: envio.cantidad,
+    fechaEntrega: envio.fechaEntrega,
+    precioEnvio: envio.precioEnvio,
+    nombrePuerto: envio.nombrePuerto ?? '',
+    numeroFlota: envio.numeroFlota ?? '',
+    numeroGuia: envio.numeroGuia,
+  });
+}
+
+eliminarEnvio(envio: EnvioResponse): void {
+  if (!envio.id) {
+    alert('No se puede eliminar porque el envío no tiene id.');
+    return;
+  }
+
+  const confirmado = confirm(`¿Deseas eliminar el envío ${envio.numeroGuia}?`);
+  if (!confirmado) {
+    return;
+  }
+
+  this.enviosService.eliminar(envio.id).subscribe({
+    next: () => {
+      this.envios.update((actual) => actual.filter((item) => item.id !== envio.id));
+
+      if (this.editandoId() === envio.id) {
+        this.cancelarEdicion();
+      }
+    },
+    error: (error) => {
+      console.error('Error al eliminar envío', error);
+      alert('No se pudo eliminar el envío');
+    },
+  });
+}
+
+cancelarEdicion(): void {
+  this.editandoId.set(null);
+  this.resetTerrestreForm();
+  this.resetMaritimoForm();
+}
+
+private resetTerrestreForm(): void {
+  this.terrestreForm.reset({
+    clienteId: '',
+    tipoProducto: '',
+    cantidad: 1,
+    fechaEntrega: '',
+    precioEnvio: 100,
+    nombreBodega: '',
+    placaVehiculo: '',
+    numeroGuia: '',
+  });
+}
+
+private resetMaritimoForm(): void {
+  this.maritimoForm.reset({
+    clienteId: '',
+    tipoProducto: '',
+    cantidad: 1,
+    fechaEntrega: '',
+    precioEnvio: 200,
+    nombrePuerto: '',
+    numeroFlota: '',
+    numeroGuia: '',
+  });
+}
 }

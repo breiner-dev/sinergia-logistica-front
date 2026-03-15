@@ -14,7 +14,9 @@
 
       <div class="main-content">
         <div class="form-section">
-          <h2>➕ Registrar Nuevo Envío</h2>
+          <h2>
+            {{ editandoId() ? '✏️ Editar Envío' : '➕ Registrar Nuevo Envío' }}
+          </h2>
 
           <div class="form-tabs">
             <button
@@ -102,8 +104,16 @@
                 </div>
 
                 <button type="submit" class="btn-submit">
-                  💾 Registrar Envío Terrestre
+                  {{ editandoId() && tabActiva() === 'terrestre'
+                    ? '💾 Actualizar Envío Terrestre'
+                    : '💾 Registrar Envío Terrestre' }}
                 </button>
+
+                @if (editandoId() && tabActiva() === 'terrestre') {
+                  <button type="button" class="btn-cancel" (click)="cancelarEdicion()">
+                    Cancelar edición
+                  </button>
+                }
               </form>
             </div>
           }
@@ -174,8 +184,16 @@
                 </div>
 
                 <button type="submit" class="btn-submit">
-                  💾 Registrar Envío Marítimo
+                  {{ editandoId() && tabActiva() === 'maritimo'
+                    ? '💾 Actualizar Envío Marítimo'
+                    : '💾 Registrar Envío Marítimo' }}
                 </button>
+
+                @if (editandoId() && tabActiva() === 'maritimo') {
+                  <button type="button" class="btn-cancel" (click)="cancelarEdicion()">
+                    Cancelar edición
+                  </button>
+                }
               </form>
             </div>
           }
@@ -199,7 +217,28 @@
                   <span class="shipment-type">
                     {{ envio.tipoLogistica === 'TERRESTRE' ? '🚚 Terrestre' : '🚢 Marítimo' }}
                   </span>
-                  <span class="shipment-guide">🧾 {{ envio.numeroGuia }}</span>
+
+                  <div class="shipment-header-right">
+                    <span class="shipment-guide">🧾 {{ envio.numeroGuia }}</span>
+
+                    <div class="shipment-actions">
+                      <button
+                        type="button"
+                        class="btn-action btn-edit"
+                        (click)="editarEnvio(envio)"
+                      >
+                        ✏️ Editar
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn-action btn-delete"
+                        (click)="eliminarEnvio(envio)"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="shipment-details">
@@ -210,7 +249,9 @@
                   <div>✅ Entrega: {{ envio.fechaEntrega || 'N/A' }}</div>
                   <div>
                     {{ envio.tipoLogistica === 'TERRESTRE' ? '🏬' : '⚓' }}
-                    {{ envio.tipoLogistica === 'TERRESTRE' ? (envio.nombreBodega || 'N/A') : (envio.nombrePuerto || 'N/A') }}
+                    {{ envio.tipoLogistica === 'TERRESTRE'
+                      ? (envio.nombreBodega || 'N/A')
+                      : (envio.nombrePuerto || 'N/A') }}
                   </div>
                   <div>
                     {{

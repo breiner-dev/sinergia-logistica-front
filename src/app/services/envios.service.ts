@@ -25,4 +25,11 @@ export class EnviosService {
   listar(): Observable<EnvioResponse[]> {
     return this.http.get<EnvioResponse[]>(this.apiUrl);
   }
+  actualizar(id: string, payload: CrearEnvioTerrestreRequest | CrearEnvioMaritimoRequest) {
+    return this.http.put<EnvioResponse>(`${this.apiUrl}/${id}`, payload);
+  }
+
+  eliminar(id: string) {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }
