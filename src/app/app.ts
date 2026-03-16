@@ -180,6 +180,7 @@ export class App implements OnInit {
       nombreBodega: this.terrestreForm.get('nombreBodega')?.value ?? '',
       placaVehiculo: (this.terrestreForm.get('placaVehiculo')?.value ?? '').toUpperCase(),
       numeroGuia: this.terrestreForm.get('numeroGuia')?.value ?? '',
+      tipoLogistica : "MARITIMA"
     };
 
     if (this.editandoId()) {
@@ -225,6 +226,7 @@ export class App implements OnInit {
       nombrePuerto: this.maritimoForm.get('nombrePuerto')?.value ?? '',
       numeroFlota: (this.maritimoForm.get('numeroFlota')?.value ?? '').toUpperCase(),
       numeroGuia: this.maritimoForm.get('numeroGuia')?.value ?? '',
+      tipoLogistica: "TERRESTRE"
     };
 
     if (this.editandoId()) {

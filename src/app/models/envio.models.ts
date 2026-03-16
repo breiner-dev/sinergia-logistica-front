@@ -7,6 +7,7 @@ export interface CrearEnvioTerrestreRequest {
   nombreBodega: string;
   placaVehiculo: string;
   numeroGuia: string;
+  tipoLogistica: string;
 }
 
 export interface CrearEnvioMaritimoRequest {
@@ -18,6 +19,7 @@ export interface CrearEnvioMaritimoRequest {
   nombrePuerto: string;
   numeroFlota: string;
   numeroGuia: string;
+  tipoLogistica: string;
 }
 
 export interface EnvioResponse {
