@@ -245,7 +245,7 @@
                   <div>👤 Cliente: {{ envio?.cliente?.nombre || 'N/A' }}</div>
                   <div>📦 {{ envio.tipoProducto }}</div>
                   <div>🧱 Cantidad: {{ envio.cantidad }}</div>
-                  <div>📅 Registro: {{ envio.fechaRegistro || 'N/A' }}</div>
+                  <div>📅 Registro: {{ envio.fechaRegistro | date:'dd/MM/yyyy' }}</div>
                   <div>✅ Entrega: {{ envio.fechaEntrega || 'N/A' }}</div>
                   <div>
                     {{ envio.tipoLogistica === 'TERRESTRE' ? '🏬' : '⚓' }}
