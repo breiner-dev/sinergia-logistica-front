@@ -263,7 +263,7 @@ export class App implements OnInit {
     if (envio.tipoLogistica === 'TERRESTRE') {
       this.tabActiva.set('terrestre');
       this.terrestreForm.patchValue({
-        clienteId: envio.clienteId,
+        clienteId: envio.cliente?.id ?? '',
         tipoProducto: envio.tipoProducto,
         cantidad: envio.cantidad,
         fechaEntrega: envio.fechaEntrega,
@@ -277,7 +277,7 @@ export class App implements OnInit {
 
     this.tabActiva.set('maritimo');
     this.maritimoForm.patchValue({
-      clienteId: envio.clienteId,
+      clienteId: envio.cliente?.id ?? '',
       tipoProducto: envio.tipoProducto,
       cantidad: envio.cantidad,
       fechaEntrega: envio.fechaEntrega,

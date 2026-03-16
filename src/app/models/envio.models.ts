@@ -1,3 +1,5 @@
+import { ClienteResponse } from "./cliente.models";
+
 export interface CrearEnvioTerrestreRequest {
   clienteId: string;
   tipoProducto: string;
@@ -24,7 +26,7 @@ export interface CrearEnvioMaritimoRequest {
 
 export interface EnvioResponse {
   id?: string;
-  clienteId: string;
+  cliente: ClienteResponse;
   tipoProducto: string;
   cantidad: number;
   fechaRegistro?: string;

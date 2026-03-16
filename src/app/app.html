@@ -242,7 +242,7 @@
                 </div>
 
                 <div class="shipment-details">
-                  <div>👤 Cliente: {{ obtenerNombreCliente(envio.clienteId) }}</div>
+                  <div>👤 Cliente: {{ envio.cliente?.nombre || 'N/A' }}</div>
                   <div>📦 {{ envio.tipoProducto }}</div>
                   <div>🧱 Cantidad: {{ envio.cantidad }}</div>
                   <div>📅 Registro: {{ envio.fechaRegistro || 'N/A' }}</div>
